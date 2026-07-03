@@ -46,6 +46,7 @@ export interface SessionRecord {
   totalInputTokens: number;
   totalOutputTokens: number;
   harnessSessionRef?: HarnessSessionRef;
+  lastSummary?: string;
 }
 
 export interface SessionSnapshot {

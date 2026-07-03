@@ -47,6 +47,41 @@ export function createEmptySessionState(spec: SessionSpec): SessionState {
   };
 }
 
+export function recordSummary(
+  state: WorkflowState,
+  sessionId: string,
+  summary: string,
+  result: {
+    costUsd?: number;
+    durationMs: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  },
+): WorkflowState {
+  const cost = result.costUsd ?? 0;
+  const inputTokens = result.inputTokens ?? 0;
+  const outputTokens = result.outputTokens ?? 0;
+  const session = state.sessions[sessionId];
+
+  return {
+    ...state,
+    spendUsd: state.spendUsd + cost,
+    currentSessionId: sessionId,
+    sessions: {
+      ...state.sessions,
+      [sessionId]: {
+        ...session,
+        lastSummary: summary,
+        costUsd: session.costUsd + cost,
+        usage: {
+          inputTokens: session.usage.inputTokens + inputTokens,
+          outputTokens: session.usage.outputTokens + outputTokens,
+        },
+      },
+    },
+  };
+}
+
 export function recordTurn(
   state: WorkflowState,
   sessionId: string,

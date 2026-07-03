@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createInitialState, markCompleted, recordTurn } from "./state.js";
+import { createInitialState, markCompleted, recordSummary, recordTurn } from "./state.js";
 import type { SessionSpec, Trigger, Workflow } from "./types.js";
 
 function makeTrigger(): Trigger {
@@ -70,6 +70,47 @@ describe("recordTurn", () => {
 
     assert.equal(state.spendUsd, 0);
     assert.equal(state.history[0].costUsd, 0);
+  });
+});
+
+describe("recordSummary", () => {
+  it("stores the summary and aggregates cost/tokens without incrementing iteration", () => {
+    const workflow = makeWorkflow([{ id: "reader", role: "reader", harness: "mock" }]);
+    let state = createInitialState(workflow, makeTrigger());
+    state = recordTurn(state, "reader", "read this", {
+      text: "done",
+      costUsd: 0.05,
+      durationMs: 1200,
+      inputTokens: 10,
+      outputTokens: 20,
+    });
+
+    state = recordSummary(state, "reader", "concise summary", {
+      costUsd: 0.02,
+      durationMs: 300,
+      inputTokens: 5,
+      outputTokens: 8,
+    });
+
+    assert.equal(state.iteration, 1);
+    assert.equal(state.spendUsd, 0.07);
+    assert.equal(state.sessions.reader.lastSummary, "concise summary");
+    assert.equal(state.sessions.reader.costUsd, 0.07);
+    assert.equal(state.sessions.reader.usage.inputTokens, 15);
+    assert.equal(state.sessions.reader.usage.outputTokens, 28);
+  });
+
+  it("defaults missing cost and tokens to zero", () => {
+    const workflow = makeWorkflow([{ id: "reader", role: "reader", harness: "mock" }]);
+    let state = createInitialState(workflow, makeTrigger());
+    state = recordTurn(state, "reader", "read this", { text: "done", durationMs: 100 });
+
+    state = recordSummary(state, "reader", "summary", { durationMs: 50 });
+
+    assert.equal(state.spendUsd, 0);
+    assert.equal(state.sessions.reader.lastSummary, "summary");
+    assert.equal(state.sessions.reader.usage.inputTokens, 0);
+    assert.equal(state.sessions.reader.usage.outputTokens, 0);
   });
 });
 

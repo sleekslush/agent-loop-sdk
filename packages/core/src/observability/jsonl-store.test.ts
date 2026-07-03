@@ -90,4 +90,61 @@ describe("JsonlObservationStore", () => {
     const retrieved = await store.getSessionSnapshot("r1", "s1");
     assert.equal(retrieved?.content, "{}");
   });
+
+  it("upserts multiple distinct workflow rollups without collision", async () => {
+    const store = new JsonlObservationStore({ baseDir });
+    const rollup1 = {
+      workflowId: "wf1",
+      period: "2024-07",
+      runs: 1,
+      successCount: 1,
+      failureCount: 0,
+      pauseCount: 0,
+      totalCostUsd: 0.01,
+      totalDurationMs: 100,
+      totalIterations: 1,
+    };
+    const rollup2 = {
+      workflowId: "wf2",
+      period: "2024-07",
+      runs: 1,
+      successCount: 0,
+      failureCount: 1,
+      pauseCount: 0,
+      totalCostUsd: 0.02,
+      totalDurationMs: 200,
+      totalIterations: 2,
+    };
+
+    await store.upsertWorkflowRollup(rollup1);
+    await store.upsertWorkflowRollup(rollup2);
+    await store.upsertWorkflowRollup({ ...rollup1, runs: 3, totalCostUsd: 0.03 });
+
+    const rollups = await store.queryWorkflowRollups({ period: "2024-07" });
+    assert.equal(rollups.length, 2);
+    const byWorkflow = new Map(rollups.map((r) => [r.workflowId, r]));
+    assert.equal(byWorkflow.get("wf1")?.runs, 3);
+    assert.equal(byWorkflow.get("wf2")?.runs, 1);
+  });
+
+  it("upserts role rollups by workflow, role, and period", async () => {
+    const store = new JsonlObservationStore({ baseDir });
+    const base = {
+      period: "2024-07",
+      runs: 1,
+      turnCount: 1,
+      totalCostUsd: 0.01,
+      totalDurationMs: 100,
+    };
+    await store.upsertRoleRollup({ ...base, workflowId: "wf1", role: "coder" });
+    await store.upsertRoleRollup({ ...base, workflowId: "wf1", role: "reviewer" });
+    await store.upsertRoleRollup({ ...base, workflowId: "wf2", role: "coder" });
+    await store.upsertRoleRollup({ ...base, workflowId: "wf1", role: "coder", turnCount: 5, totalCostUsd: 0.05 });
+
+    const rollups = await store.queryRoleRollups({ workflowId: "wf1" });
+    assert.equal(rollups.length, 2);
+    const coder = rollups.find((r) => r.role === "coder");
+    assert.equal(coder?.turnCount, 5);
+    assert.equal(coder?.totalCostUsd, 0.05);
+  });
 });

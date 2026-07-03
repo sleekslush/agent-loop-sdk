@@ -91,6 +91,25 @@ export class ObservationCollector {
         break;
       }
 
+      case "turn.summarized": {
+        const session = this.sessions.get(`${event.runId}:${event.sessionId}`);
+        if (session) {
+          session.lastSummary = event.summary;
+          session.totalCostUsd += event.costUsd;
+          session.totalDurationMs += event.durationMs;
+          session.totalInputTokens += event.inputTokens;
+          session.totalOutputTokens += event.outputTokens;
+          await this.store.upsertSession(session);
+        }
+
+        const run = this.runs.get(event.runId);
+        if (run) {
+          run.totalCostUsd += event.costUsd;
+          await this.store.upsertRun(run);
+        }
+        break;
+      }
+
       case "turn.completed": {
         const session = this.sessions.get(`${event.runId}:${event.sessionId}`);
         if (session) {
@@ -151,8 +170,75 @@ export class ObservationCollector {
         const event = { type: observation.type, ...observation.payload } as OrchestratorEvent;
         await this.onEvent(event);
       }
+
+      await this.rebuildRollups();
     } finally {
       this.rebuilding = false;
+    }
+  }
+
+  private async rebuildRollups(): Promise<void> {
+    const runs = await this.store.queryRuns({});
+    const sessions = await this.store.querySessions({});
+    const runById = new Map(runs.map((run) => [run.id, run]));
+
+    const workflowRollupMap = new Map<string, WorkflowRollup>();
+    for (const run of runs) {
+      const period = periodFromDate(run.startedAt);
+      const key = `${run.workflowId}:${period}`;
+      let rollup = workflowRollupMap.get(key);
+      if (!rollup) {
+        rollup = {
+          workflowId: run.workflowId,
+          period,
+          runs: 0,
+          successCount: 0,
+          failureCount: 0,
+          pauseCount: 0,
+          totalCostUsd: 0,
+          totalDurationMs: 0,
+          totalIterations: 0,
+        };
+        workflowRollupMap.set(key, rollup);
+      }
+      rollup.runs += 1;
+      if (run.outcome === "success") rollup.successCount += 1;
+      else if (run.outcome === "failure") rollup.failureCount += 1;
+      else if (run.outcome === "paused") rollup.pauseCount += 1;
+      rollup.totalCostUsd += run.totalCostUsd;
+      rollup.totalDurationMs += run.durationMs ?? 0;
+      rollup.totalIterations += run.iterationCount;
+    }
+
+    const roleRollupMap = new Map<string, RoleRollup>();
+    for (const session of sessions) {
+      const run = runById.get(session.runId);
+      const period = periodFromDate(run?.startedAt ?? new Date());
+      const key = `${session.workflowId}:${session.role}:${period}`;
+      let rollup = roleRollupMap.get(key);
+      if (!rollup) {
+        rollup = {
+          workflowId: session.workflowId,
+          role: session.role,
+          period,
+          runs: 0,
+          turnCount: 0,
+          totalCostUsd: 0,
+          totalDurationMs: 0,
+        };
+        roleRollupMap.set(key, rollup);
+      }
+      rollup.runs += 1;
+      rollup.turnCount += session.turnCount;
+      rollup.totalCostUsd += session.totalCostUsd;
+      rollup.totalDurationMs += session.totalDurationMs;
+    }
+
+    for (const rollup of workflowRollupMap.values()) {
+      await this.store.upsertWorkflowRollup(rollup);
+    }
+    for (const rollup of roleRollupMap.values()) {
+      await this.store.upsertRoleRollup(rollup);
     }
   }
 

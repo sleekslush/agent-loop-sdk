@@ -12,7 +12,7 @@ import type {
 import { checkConstraints, validateModel } from "./constraints.js";
 import type { CheckpointStore } from "./checkpoint.js";
 import { createFileCheckpointStore } from "./checkpoint.js";
-import { createInitialState, markCompleted, recordTurn } from "./state.js";
+import { createInitialState, markCompleted, recordSummary, recordTurn } from "./state.js";
 
 export interface OrchestratorOptions {
   harnesses: AgentHarness[];
@@ -219,6 +219,39 @@ export class Orchestrator {
         ...state,
         context: { ...state.context, ...extracted },
       };
+    }
+
+    if (spec?.summarizeOutput) {
+      const summaryPrompt =
+        spec.summaryPrompt ??
+        "Summarize your previous response concisely so it can be used as context for the next step in this workflow. End with a single line: VERDICT: APPROVED or VERDICT: REJECTED if applicable.";
+
+      const summaryStart = Date.now();
+      const summaryResult = await session.prompt(summaryPrompt);
+      const summaryDurationMs = Date.now() - summaryStart;
+      const summaryInputTokens = summaryResult.usage?.inputTokens ?? 0;
+      const summaryOutputTokens = summaryResult.usage?.outputTokens ?? 0;
+      const summaryCostUsd = summaryResult.costUsd ?? 0;
+
+      state = recordSummary(state, sessionId, summaryResult.text, {
+        costUsd: summaryCostUsd,
+        durationMs: summaryDurationMs,
+        inputTokens: summaryInputTokens,
+        outputTokens: summaryOutputTokens,
+      });
+
+      await this.emit({
+        type: "turn.summarized",
+        runId: state.id,
+        sessionId,
+        role: spec?.role ?? sessionId,
+        iteration: state.iteration,
+        summary: summaryResult.text,
+        durationMs: summaryDurationMs,
+        costUsd: summaryCostUsd,
+        inputTokens: summaryInputTokens,
+        outputTokens: summaryOutputTokens,
+      });
     }
 
     await this.emit({

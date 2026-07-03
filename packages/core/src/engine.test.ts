@@ -189,6 +189,56 @@ describe("Orchestrator", () => {
     assert.equal(state.context.parsed, "HELLO");
   });
 
+  it("summarizes output and passes the summary to the next transition", async () => {
+    const defaultSummaryPrompt =
+      "Summarize your previous response concisely so it can be used as context for the next step in this workflow. End with a single line: VERDICT: APPROVED or VERDICT: REJECTED if applicable.";
+
+    harness.setResponse("implement", "implementation complete");
+    harness.setResponse(defaultSummaryPrompt, "Summary: implementation looks good. VERDICT: APPROVED");
+    harness.setResponse("review: Summary: implementation looks good. VERDICT: APPROVED", "review complete");
+
+    const workflow: Workflow = defineWorkflow({
+      id: "summarize",
+      goal: "summarize output test",
+      sessions: [
+        {
+          id: "coder",
+          role: "coder",
+          harness: "mock",
+          summarizeOutput: true,
+        },
+        {
+          id: "reviewer",
+          role: "reviewer",
+          harness: "mock",
+        },
+      ],
+      transitions: [
+        { from: "start", to: "coder", input: "implement" },
+        {
+          from: "coder",
+          to: "reviewer",
+          input: (state) => `review: ${state.sessions.coder.lastSummary}`,
+        },
+      ],
+      constraints: { maxIterations: 10 },
+      exitConditions: {
+        goalMet: (state) => state.currentSessionId === "reviewer",
+      },
+    });
+
+    const state = await orchestrator.start(workflow, undefined, makeTrigger());
+
+    assert.equal(state.status, "completed");
+    assert.equal(state.outcome, "success");
+    assert.equal(state.sessions.coder.lastSummary, "Summary: implementation looks good. VERDICT: APPROVED");
+    assert.equal(state.sessions.reviewer.lastOutput, "review complete");
+    assert.equal(state.iteration, 2);
+    assert.equal(state.spendUsd, 0.03);
+    assert.ok(events.includes("turn.summarized"));
+    assert.ok(events.includes("turn.completed"));
+  });
+
   it("does nothing when resumed from a non-running state", async () => {
     const workflow: Workflow = defineWorkflow({
       id: "resume",

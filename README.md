@@ -60,6 +60,22 @@ const state = await orchestrator.start(workflow);
 console.log(state.outcome);
 ```
 
+A session can also ask the harness to summarize its own output after a turn:
+
+```ts
+{
+  id: "reviewer",
+  role: "reviewer",
+  harness: "pi",
+  summarizeOutput: true,
+  summaryPrompt: "Summarize your review in one paragraph and end with VERDICT: APPROVED or VERDICT: REJECTED.",
+}
+```
+
+The summary is stored on `state.sessions.reviewer.lastSummary` and emitted as a
+`turn.summarized` event. See [docs/observability.md](docs/observability.md) for
+more details.
+
 ## Examples
 
 - [`examples/minimal`](examples/minimal) — smallest possible workflow.

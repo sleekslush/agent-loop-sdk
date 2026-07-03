@@ -70,6 +70,46 @@ Call `collector.reindex()` to rebuild derived records from the raw event stream.
 `ObservationClient` wraps the store with convenience methods such as
 `getSuccessRate`, `getTotalSpend`, and `getAverageDuration`.
 
+## Per-session output summarization
+
+A `SessionSpec` can set `summarizeOutput: true` to ask the session to summarize
+its own output after each turn. The summary is stored as
+`state.sessions[sessionId].lastSummary` and in the observation store as
+`SessionRecord.lastSummary`. This is useful when the next transition only needs
+a compact digest instead of the full session output.
+
+```ts
+const workflow = defineWorkflow({
+  id: "review-loop",
+  goal: "Review a code change",
+  sessions: [
+    {
+      id: "reviewer",
+      role: "reviewer",
+      harness: "pi",
+      summarizeOutput: true,
+      summaryPrompt: "Summarize your review in one paragraph and end with VERDICT: APPROVED or VERDICT: REJECTED.",
+    },
+  ],
+  transitions: [
+    {
+      from: "start",
+      to: "reviewer",
+      input: "Review this change.",
+    },
+  ],
+  constraints: { maxIterations: 10 },
+  exitConditions: {
+    goalMet: (state) => /APPROVED/i.test(state.sessions.reviewer.lastSummary ?? ""),
+  },
+});
+```
+
+When summarization is enabled, the orchestrator emits a `turn.summarized`
+event after the main turn. The `ObservationCollector` aggregates the summary
+prompt's cost, duration, and tokens into the session and run totals without
+incrementing the turn count.
+
 ## Session recall and snapshots
 
 Harness sessions can expose a lightweight `HarnessSessionRef` via

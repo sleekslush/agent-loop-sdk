@@ -90,6 +90,17 @@ export interface SessionSpec {
     output: string,
     state: WorkflowState,
   ) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  /**
+   * When true, the orchestrator asks the same session to summarize its own output
+   * after the main turn completes. The summary is stored on the session state and
+   * can be referenced by downstream transitions.
+   */
+  summarizeOutput?: boolean;
+  /**
+   * Custom prompt used when summarizeOutput is true. If omitted, a default prompt
+   * is used.
+   */
+  summaryPrompt?: string;
 }
 
 export interface TransitionSpec {
@@ -127,6 +138,7 @@ export interface SessionState {
   harness: string;
   status: "idle" | "busy" | "error";
   lastOutput?: string;
+  lastSummary?: string;
   usage: TokenUsage;
   costUsd: number;
 }
@@ -190,6 +202,18 @@ export type OrchestratorEvent =
       sessionId: string;
       role: string;
       iteration: number;
+      durationMs: number;
+      costUsd: number;
+      inputTokens: number;
+      outputTokens: number;
+    }
+  | {
+      type: "turn.summarized";
+      runId: string;
+      sessionId: string;
+      role: string;
+      iteration: number;
+      summary: string;
       durationMs: number;
       costUsd: number;
       inputTokens: number;
