@@ -3,7 +3,12 @@
   "compilerOptions": {
     "noEmit": true,
     "moduleResolution": "NodeNext",
-    "module": "NodeNext"
+    "module": "NodeNext",
+    "baseUrl": "..",
+    "paths": {
+      "@agent-loop/core": ["packages/core/src/types.ts"],
+      "@agent-loop/harness-pi": ["packages/harness-pi/src/index.ts"]
+    }
   },
   "include": ["extensions/**/*.ts"]
 }

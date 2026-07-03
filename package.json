@@ -13,7 +13,8 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:pi": "tsc -p .pi/tsconfig.json"
+    "typecheck:pi": "tsc -p .pi/tsconfig.json",
+    "test:pi-extension": "node --test test/pi-extension-load.test.mjs"
   },
   "devDependencies": {
     "@agent-loop/core": "workspace:^",

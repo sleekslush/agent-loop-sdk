@@ -1,14 +1,14 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import {
-  Orchestrator,
-  compileAiWorkflow,
-  validateAiWorkflow,
-} from "@agent-loop/core";
-import { PiHarness } from "@agent-loop/harness-pi";
-import { jiraToMrWorkflow } from "../../examples/jira-to-mr/src/workflow.js";
-import type { Trigger, Workflow, OrchestratorEvent } from "@agent-loop/core";
-import type { AiWorkflow } from "@agent-loop/core";
+import { compileAiWorkflow, validateAiWorkflow } from "../../packages/core/src/ai-workflow.js";
+import { Orchestrator } from "../../packages/core/src/engine.js";
+import { PiHarness } from "../../packages/harness-pi/src/index.js";
+import type { AiWorkflow } from "../../packages/core/src/ai-workflow.js";
+import type {
+  OrchestratorEvent,
+  Trigger,
+  Workflow,
+} from "../../packages/core/src/types.js";
 
 /**
  * Project-local pi extension for dogfooding agent-loop-sdk.
@@ -76,7 +76,7 @@ export default function (pi: ExtensionAPI) {
           ctx.ui.notify("Usage: /agentloop run <workflow-id>", "error");
           return;
         }
-        const { workflow, trigger } = buildPredefinedWorkflow(workflowId, rest);
+        const { workflow, trigger } = await buildPredefinedWorkflow(workflowId, rest);
         if (!workflow) {
           ctx.ui.notify(`Unknown workflow: ${workflowId}`, "error");
           return;
@@ -127,7 +127,10 @@ export default function (pi: ExtensionAPI) {
             details: {},
           };
         }
-        const { workflow, trigger } = buildPredefinedWorkflow(params.workflow_id, [params.goal]);
+        const { workflow, trigger } = await buildPredefinedWorkflow(
+          params.workflow_id,
+          [params.goal],
+        );
         if (!workflow) {
           return {
             content: [{ type: "text", text: `Unknown workflow: ${params.workflow_id}` }],
@@ -222,15 +225,18 @@ async function runWorkflow(
   });
 }
 
-function buildPredefinedWorkflow(
+async function buildPredefinedWorkflow(
   workflowId: string,
   args: string[],
-): { workflow: Workflow; trigger: Trigger } | { workflow: undefined; trigger: undefined } {
+): Promise<
+  { workflow: Workflow; trigger: Trigger } | { workflow: undefined; trigger: undefined }
+> {
   if (workflowId === "jira-to-mr") {
     const ticketKey = args[0] ?? "AC-123";
     const branchName = args[1] ?? `feature/${ticketKey.toLowerCase().replace(/-/g, "_")}`;
+    const workflow = await loadJiraToMrWorkflow();
     return {
-      workflow: jiraToMrWorkflow,
+      workflow,
       trigger: {
         id: `jira-${ticketKey}`,
         source: "pi-extension",
@@ -242,4 +248,10 @@ function buildPredefinedWorkflow(
   }
 
   return { workflow: undefined, trigger: undefined };
+}
+
+async function loadJiraToMrWorkflow(): Promise<Workflow> {
+  const modulePath = "../../examples/jira-to-mr/src/workflow.js";
+  const module = (await import(modulePath)) as { jiraToMrWorkflow: Workflow };
+  return module.jiraToMrWorkflow;
 }
