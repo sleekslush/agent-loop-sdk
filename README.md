@@ -112,7 +112,7 @@ pnpm -r test
 - [x] Tests
 - [x] Jira→MR example
 - [ ] Resilience (retries, error handling, session recovery)
-- [ ] Enhanced observability (streaming events, cost dashboards)
+- [x] Observability (queryable stores, rollups, session recall) — see [docs/observability.md](docs/observability.md)
 - [ ] OpenCode / Claude harness adapter validation
 
 ## License

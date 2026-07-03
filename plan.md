@@ -349,20 +349,28 @@ The SDK may support parallel fan-out/fan-in or leave it to the consumer; for v1,
 
 ## 11. Observability
 
-Emit typed events:
+The SDK emits typed `OrchestratorEvent`s and persists them to a pluggable
+observation store. Consumers can query runs, sessions, and aggregates through
+`ObservationClient`.
 
 ```ts
-type OrchestratorEvent =
-  | { type: "workflow.started"; workflowId: string }
-  | { type: "session.created"; sessionId: string; harness: string }
-  | { type: "turn.started"; sessionId: string; iteration: number }
-  | { type: "turn.completed"; sessionId: string; durationMs: number; costUsd: number }
-  | { type: "constraint.breached"; constraint: string }
-  | { type: "workflow.completed"; workflowId: string; outcome: "success" | "failure" }
-  | { type: "checkpoint.written"; checkpointId: string };
+const store = createObservationStore({ type: "jsonl", baseDir: ".checkpoints/observations" });
+const collector = new ObservationCollector(store, { harnesses: [piHarness] });
+const orchestrator = new Orchestrator({ harnesses: [piHarness], onEvent: (e) => collector.onEvent(e) });
 ```
 
-Consumers can subscribe to build logs, dashboards, or audit trails.
+Storage adapters:
+
+- `jsonl` — default, dependency-free files.
+- `sqlite` — indexed SQLite store; requires `better-sqlite3`.
+- `memory` — for tests and short-lived usage.
+
+The collector denormalizes events into `Run` and `SessionRecord` summaries and
+pre-computes workflow/role rollups. Harness sessions can expose a
+`HarnessSessionRef` so specific sessions can be resumed or exported later via
+`AgentHarness.resumeSession()` and `AgentHarness.exportSession()`.
+
+See `docs/observability.md` for a full usage example.
 
 ## 12. Repository Layout
 
@@ -387,7 +395,8 @@ agent-loop-sdk/
 2. **M1 — Tests**: ✅ unit tests for constraints, state transitions, checkpoint I/O, orchestrator routing, and `parseOutput`.
 3. **M2 — Use-case example**: ✅ Jira→MR consumer in `examples/jira-to-mr/`.
 4. **M3 — Resilience**: retry boundaries, error handling, session recovery.
-5. **M4 — Enhanced observability**: optional streaming events, cost dashboards.
+5. **M4 — Enhanced observability**: ✅ pluggable observation store (JSONL/SQLite/memory),
+   `ObservationCollector`, `ObservationClient`, harness session refs, and snapshots.
 6. **M5 — Future adapters**: validate OpenCode/Claude harness adapter interface.
 
 ## 14. Technology Decisions

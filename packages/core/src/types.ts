@@ -20,18 +20,45 @@ export interface PromptOptions {
   [key: string]: unknown;
 }
 
+export interface HarnessSessionRef {
+  harness: string;
+  sessionId?: string;
+  sessionFile?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface HarnessSession {
   readonly id: string;
   readonly harness: string;
+
+  /**
+   * Returns a reference the harness can use to resume this session later.
+   * Optional: not all harnesses support resumption.
+   */
+  getRef?(): HarnessSessionRef;
 
   prompt(text: string, options?: PromptOptions): Promise<SessionTurnResult>;
   subscribe?(listener: (event: HarnessEvent) => void): () => void;
   dispose(): void;
 }
 
+export type SessionExportFormat = "jsonl" | "html" | "markdown";
+
 export interface AgentHarness {
   readonly name: string;
   createSession(config: SessionConfig): Promise<HarnessSession>;
+
+  /**
+   * Resume a session from a previously captured reference.
+   * Optional: not all harnesses support resumption.
+   */
+  resumeSession?(ref: HarnessSessionRef, config?: SessionConfig): Promise<HarnessSession>;
+
+  /**
+   * Export a session to a viewable format.
+   * Optional: not all harnesses support export.
+   */
+  exportSession?(ref: HarnessSessionRef, format: SessionExportFormat): Promise<string>;
 }
 
 export interface SessionConfig {
@@ -138,10 +165,46 @@ export type HarnessEvent =
   | { type: "error"; message: string };
 
 export type OrchestratorEvent =
-  | { type: "workflow.started"; workflowId: string; stateId: string }
-  | { type: "session.created"; sessionId: string; harness: string }
-  | { type: "turn.started"; sessionId: string; iteration: number }
-  | { type: "turn.completed"; sessionId: string; iteration: number; durationMs: number; costUsd: number }
-  | { type: "constraint.breached"; constraint: string }
-  | { type: "workflow.completed"; workflowId: string; stateId: string; outcome: "success" | "failure" | "paused" }
+  | {
+      type: "workflow.started";
+      runId: string;
+      workflowId: string;
+      stateId: string;
+      goal: string;
+      triggerSource: string;
+      constraints: Constraints;
+    }
+  | {
+      type: "session.created";
+      runId: string;
+      sessionId: string;
+      role: string;
+      harness: string;
+      model?: string;
+      harnessSessionRef?: HarnessSessionRef;
+    }
+  | { type: "turn.started"; runId: string; sessionId: string; role: string; iteration: number }
+  | {
+      type: "turn.completed";
+      runId: string;
+      sessionId: string;
+      role: string;
+      iteration: number;
+      durationMs: number;
+      costUsd: number;
+      inputTokens: number;
+      outputTokens: number;
+    }
+  | { type: "constraint.breached"; runId: string; constraint: string; iteration: number }
+  | {
+      type: "workflow.completed";
+      runId: string;
+      workflowId: string;
+      stateId: string;
+      outcome: "success" | "failure" | "paused";
+      failureReason?: string;
+      iteration: number;
+      spendUsd: number;
+      durationMs: number;
+    }
   | { type: "checkpoint.written"; stateId: string; path: string };

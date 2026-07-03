@@ -78,7 +78,9 @@ describe("Orchestrator", () => {
     orchestrator = new Orchestrator({
       harnesses: [harness],
       checkpointStore: createFileCheckpointStore({ baseDir: ".checkpoints-test" }),
-      onEvent: (event) => events.push(event.type),
+      onEvent: (event) => {
+        events.push(event.type);
+      },
     });
   });
 

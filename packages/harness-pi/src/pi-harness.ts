@@ -1,4 +1,11 @@
-import type { AgentHarness, HarnessSession, SessionConfig } from "@agent-loop/core";
+import { readFile } from "node:fs/promises";
+import type {
+  AgentHarness,
+  HarnessSession,
+  HarnessSessionRef,
+  SessionConfig,
+  SessionExportFormat,
+} from "@agent-loop/core";
 import {
   createAgentSession,
   SessionManager,
@@ -40,6 +47,32 @@ export class PiHarness implements AgentHarness {
   }
 
   async createSession(config: SessionConfig): Promise<HarnessSession> {
+    const sessionManager = SessionManager.inMemory(this.cwd);
+    return this.createPiSession(config, sessionManager);
+  }
+
+  async resumeSession(ref: HarnessSessionRef, config?: SessionConfig): Promise<HarnessSession> {
+    if (!ref.sessionFile) {
+      throw new Error("Cannot resume pi session without sessionFile");
+    }
+    const sessionManager = SessionManager.open(ref.sessionFile, undefined, this.cwd);
+    return this.createPiSession(config ?? {}, sessionManager);
+  }
+
+  async exportSession(ref: HarnessSessionRef, format: SessionExportFormat): Promise<string> {
+    if (format !== "jsonl") {
+      throw new Error(`Pi harness does not yet support exporting sessions as ${format}`);
+    }
+    if (!ref.sessionFile) {
+      throw new Error("Cannot export pi session without sessionFile");
+    }
+    return readFile(ref.sessionFile, "utf-8");
+  }
+
+  private async createPiSession(
+    config: SessionConfig,
+    sessionManager: SessionManager,
+  ): Promise<HarnessSession> {
     const model = config.model ? await this.resolveModel(config.model) : undefined;
 
     const loader = this.resourceLoader ?? new DefaultResourceLoader({
@@ -58,10 +91,10 @@ export class PiHarness implements AgentHarness {
       modelRegistry: this.modelRegistry,
       settingsManager: this.settingsManager,
       resourceLoader: loader,
-      sessionManager: SessionManager.inMemory(this.cwd),
+      sessionManager,
     });
 
-    return new PiHarnessSession(config.model ?? "default", session);
+    return new PiHarnessSession(config.model ?? session.sessionId, session);
   }
 
   private async resolveModel(modelRef: string): Promise<Model<Api> | undefined> {

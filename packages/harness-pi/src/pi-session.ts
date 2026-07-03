@@ -1,6 +1,7 @@
 import type {
   HarnessSession,
   HarnessEvent,
+  HarnessSessionRef,
   PromptOptions,
   SessionTurnResult,
   TokenUsage,
@@ -18,6 +19,14 @@ export class PiHarnessSession implements HarnessSession {
     this.id = id;
     this.session = session;
     this.session.subscribe((event) => this.forwardEvent(event));
+  }
+
+  getRef(): HarnessSessionRef {
+    return {
+      harness: "pi",
+      sessionId: this.session.sessionId,
+      sessionFile: this.session.sessionFile,
+    };
   }
 
   async prompt(text: string, _options?: PromptOptions): Promise<SessionTurnResult> {

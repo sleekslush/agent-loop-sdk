@@ -51,9 +51,17 @@ export function recordTurn(
   state: WorkflowState,
   sessionId: string,
   prompt: string,
-  result: { text: string; costUsd?: number; durationMs: number },
+  result: {
+    text: string;
+    costUsd?: number;
+    durationMs: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  },
 ): WorkflowState {
   const cost = result.costUsd ?? 0;
+  const inputTokens = result.inputTokens ?? 0;
+  const outputTokens = result.outputTokens ?? 0;
   const session = state.sessions[sessionId];
 
   const step: StepRecord = {
@@ -78,6 +86,10 @@ export function recordTurn(
         status: "idle",
         lastOutput: result.text,
         costUsd: session.costUsd + cost,
+        usage: {
+          inputTokens: session.usage.inputTokens + inputTokens,
+          outputTokens: session.usage.outputTokens + outputTokens,
+        },
       },
     },
     history: [...state.history, step],

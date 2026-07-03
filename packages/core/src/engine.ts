@@ -17,13 +17,13 @@ import { createInitialState, markCompleted, recordTurn } from "./state.js";
 export interface OrchestratorOptions {
   harnesses: AgentHarness[];
   checkpointStore?: CheckpointStore;
-  onEvent?: (event: OrchestratorEvent) => void;
+  onEvent?: (event: OrchestratorEvent) => void | Promise<void>;
 }
 
 export class Orchestrator {
   private harnessMap: Map<string, AgentHarness>;
   private checkpointStore: CheckpointStore;
-  private onEvent: (event: OrchestratorEvent) => void;
+  private onEvent: (event: OrchestratorEvent) => void | Promise<void>;
 
   constructor(options: OrchestratorOptions) {
     this.harnessMap = new Map(options.harnesses.map((h) => [h.name, h]));
@@ -44,9 +44,17 @@ export class Orchestrator {
       receivedAt: new Date(),
     });
 
-    this.emit({ type: "workflow.started", workflowId: workflow.id, stateId: currentState.id });
+    await this.emit({
+      type: "workflow.started",
+      runId: currentState.id,
+      workflowId: workflow.id,
+      stateId: currentState.id,
+      goal: workflow.goal,
+      triggerSource: currentState.trigger.source,
+      constraints: workflow.constraints,
+    });
 
-    const sessions = await this.createSessions(workflow.sessions);
+    const sessions = await this.createSessions(workflow.sessions, currentState.id);
     const specMap = new Map(workflow.sessions.map((s) => [s.id, s]));
 
     try {
@@ -58,7 +66,10 @@ export class Orchestrator {
     }
   }
 
-  private async createSessions(specs: SessionSpec[]): Promise<Record<string, HarnessSession>> {
+  private async createSessions(
+    specs: SessionSpec[],
+    runId: string,
+  ): Promise<Record<string, HarnessSession>> {
     const result: Record<string, HarnessSession> = {};
     for (const spec of specs) {
       const harness = this.harnessMap.get(spec.harness);
@@ -72,7 +83,15 @@ export class Orchestrator {
       };
       const session = await harness.createSession(config);
       result[spec.id] = session;
-      this.emit({ type: "session.created", sessionId: spec.id, harness: spec.harness });
+      await this.emit({
+        type: "session.created",
+        runId,
+        sessionId: spec.id,
+        role: spec.role,
+        harness: spec.harness,
+        model: spec.model,
+        harnessSessionRef: session.getRef?.(),
+      });
     }
     return result;
   }
@@ -89,21 +108,26 @@ export class Orchestrator {
       const constraintCheck = checkConstraints(workflow.constraints, state);
       if (constraintCheck.breached) {
         const onBudget = workflow.exitConditions.onBudgetExhausted ?? "fail";
-        this.emit({ type: "constraint.breached", constraint: constraintCheck.reason! });
+        await this.emit({
+          type: "constraint.breached",
+          runId: state.id,
+          constraint: constraintCheck.reason!,
+          iteration: state.iteration,
+        });
         if (constraintCheck.reason?.startsWith("maxSpendUsd") && onBudget === "pause") {
-          return markCompleted(state, "paused", constraintCheck.reason);
+          return this.finish(state, "paused", constraintCheck.reason);
         }
-        return this.finish(state, "failure", constraintCheck.reason);
+        return await this.finish(state, "failure", constraintCheck.reason);
       }
 
       const exit = await this.evaluateExit(workflow.exitConditions, state);
       if (exit) {
-        return this.finish(state, exit.outcome, exit.reason);
+        return await this.finish(state, exit.outcome, exit.reason);
       }
 
       const next = await this.selectNextTransition(workflow.transitions, state);
       if (!next) {
-        return this.finish(state, "failure", "no matching transition");
+        return await this.finish(state, "failure", "no matching transition");
       }
 
       state = await this.executeTurn(state, sessions, next, specMap);
@@ -163,33 +187,50 @@ export class Orchestrator {
         ? await transition.input(state)
         : (transition.input ?? "Continue the workflow.");
 
-    this.emit({ type: "turn.started", sessionId, iteration: state.iteration + 1 });
+    const spec = specMap.get(sessionId);
+
+    await this.emit({
+      type: "turn.started",
+      runId: state.id,
+      sessionId,
+      role: spec?.role ?? sessionId,
+      iteration: state.iteration + 1,
+    });
 
     const start = Date.now();
     const result = await session.prompt(prompt);
     const durationMs = Date.now() - start;
 
+    const inputTokens = result.usage?.inputTokens ?? 0;
+    const outputTokens = result.usage?.outputTokens ?? 0;
+
     state = recordTurn(state, sessionId, prompt, {
       text: result.text,
       costUsd: result.costUsd,
       durationMs,
+      inputTokens,
+      outputTokens,
     });
 
-    const spec = specMap.get(sessionId);
-    if (spec?.parseOutput) {
-      const extracted = await spec.parseOutput(result.text, state);
+    const parseSpec = specMap.get(sessionId);
+    if (parseSpec?.parseOutput) {
+      const extracted = await parseSpec.parseOutput(result.text, state);
       state = {
         ...state,
         context: { ...state.context, ...extracted },
       };
     }
 
-    this.emit({
+    await this.emit({
       type: "turn.completed",
+      runId: state.id,
       sessionId,
+      role: spec?.role ?? sessionId,
       iteration: state.iteration,
       durationMs,
       costUsd: result.costUsd ?? 0,
+      inputTokens,
+      outputTokens,
     });
 
     return state;
@@ -197,28 +238,36 @@ export class Orchestrator {
 
   private async checkpoint(state: WorkflowState): Promise<WorkflowState> {
     const path = await this.checkpointStore.write(state);
-    this.emit({ type: "checkpoint.written", stateId: state.id, path });
+    await this.emit({ type: "checkpoint.written", stateId: state.id, path });
     return state;
   }
 
-  private finish(
+  private async finish(
     state: WorkflowState,
     outcome: "success" | "failure" | "paused",
     reason?: string,
-  ): WorkflowState {
+  ): Promise<WorkflowState> {
     const finished = markCompleted(state, outcome, reason);
-    this.emit({
+    const durationMs = finished.endedAt
+      ? finished.endedAt.getTime() - finished.startedAt.getTime()
+      : 0;
+    await this.emit({
       type: "workflow.completed",
+      runId: finished.id,
       workflowId: state.workflowId,
       stateId: finished.id,
       outcome,
+      failureReason: reason,
+      iteration: finished.iteration,
+      spendUsd: finished.spendUsd,
+      durationMs,
     });
     return finished;
   }
 
-  private emit(event: OrchestratorEvent): void {
+  private async emit(event: OrchestratorEvent): Promise<void> {
     try {
-      this.onEvent(event);
+      await this.onEvent(event);
     } catch {
       // event handlers must not break the loop
     }
