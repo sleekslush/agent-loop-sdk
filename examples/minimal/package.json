@@ -1,0 +1,16 @@
+{
+  "name": "@agent-loop-examples/minimal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-loop/core": "workspace:*",
+    "@agent-loop/harness-pi": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "8eafd2e5-64d1-4fba-9735-23b2230810c8",
+  "workflowId": "parse",
+  "trigger": {
+    "id": "trigger-1",
+    "source": "test",
+    "type": "test.start",
+    "payload": {
+      "task": "do something"
+    },
+    "receivedAt": "2026-07-03T13:53:04.771Z"
+  },
+  "status": "running",
+  "iteration": 1,
+  "spendUsd": 0.01,
+  "startedAt": "2026-07-03T13:53:04.771Z",
+  "context": {
+    "parsed": "HELLO"
+  },
+  "sessions": {
+    "parser": {
+      "id": "parser",
+      "role": "parser",
+      "harness": "mock",
+      "status": "idle",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "costUsd": 0.01,
+      "lastOutput": "hello"
+    }
+  },
+  "history": [
+    {
+      "iteration": 1,
+      "sessionId": "parser",
+      "prompt": "parse",
+      "output": "hello",
+      "costUsd": 0.01,
+      "durationMs": 0,
+      "timestamp": "2026-07-03T13:53:04.771Z"
+    }
+  ],
+  "currentSessionId": "parser"
+}

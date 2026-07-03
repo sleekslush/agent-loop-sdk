@@ -1,0 +1,44 @@
+{
+  "id": "5b47bb19-b102-4e5a-8460-e8bc8333e721",
+  "workflowId": "iter-limit",
+  "trigger": {
+    "id": "trigger-1",
+    "source": "test",
+    "type": "test.start",
+    "payload": {
+      "task": "do something"
+    },
+    "receivedAt": "2026-07-03T13:53:04.770Z"
+  },
+  "status": "running",
+  "iteration": 1,
+  "spendUsd": 0.01,
+  "startedAt": "2026-07-03T13:53:04.770Z",
+  "context": {},
+  "sessions": {
+    "step": {
+      "id": "step",
+      "role": "step",
+      "harness": "mock",
+      "status": "idle",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "costUsd": 0.01,
+      "lastOutput": "mock response for mock-session-0"
+    }
+  },
+  "history": [
+    {
+      "iteration": 1,
+      "sessionId": "step",
+      "prompt": "step",
+      "output": "mock response for mock-session-0",
+      "costUsd": 0.01,
+      "durationMs": 0,
+      "timestamp": "2026-07-03T13:53:04.770Z"
+    }
+  ],
+  "currentSessionId": "step"
+}

@@ -1,0 +1,65 @@
+{
+  "id": "1110955b-15c3-4f5a-9c8e-98e7ee5b5022",
+  "workflowId": "linear",
+  "trigger": {
+    "id": "trigger-1",
+    "source": "test",
+    "type": "test.start",
+    "payload": {
+      "task": "do something"
+    },
+    "receivedAt": "2026-07-03T13:46:59.832Z"
+  },
+  "status": "running",
+  "iteration": 2,
+  "spendUsd": 0.02,
+  "startedAt": "2026-07-03T13:46:59.832Z",
+  "context": {},
+  "sessions": {
+    "reader": {
+      "id": "reader",
+      "role": "reader",
+      "harness": "mock",
+      "status": "idle",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "costUsd": 0.01,
+      "lastOutput": "mock response for mock-session-0"
+    },
+    "writer": {
+      "id": "writer",
+      "role": "writer",
+      "harness": "mock",
+      "status": "idle",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "costUsd": 0.01,
+      "lastOutput": "mock response for mock-session-1"
+    }
+  },
+  "history": [
+    {
+      "iteration": 1,
+      "sessionId": "reader",
+      "prompt": "read",
+      "output": "mock response for mock-session-0",
+      "costUsd": 0.01,
+      "durationMs": 0,
+      "timestamp": "2026-07-03T13:46:59.832Z"
+    },
+    {
+      "iteration": 2,
+      "sessionId": "writer",
+      "prompt": "write: mock response for mock-session-0",
+      "output": "mock response for mock-session-1",
+      "costUsd": 0.01,
+      "durationMs": 0,
+      "timestamp": "2026-07-03T13:46:59.836Z"
+    }
+  ],
+  "currentSessionId": "writer"
+}

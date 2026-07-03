@@ -1,0 +1,19 @@
+{
+  "name": "@agent-loop-examples/jira-to-mr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example consumer: pull a Jira ticket, implement, review, and open a GitLab MR",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@agent-loop/core": "workspace:*",
+    "@agent-loop/harness-pi": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0"
+  }
+}
