@@ -8,9 +8,21 @@ importers:
 
   .:
     devDependencies:
+      '@agent-loop/core':
+        specifier: workspace:^
+        version: link:packages/core
+      '@agent-loop/harness-pi':
+        specifier: workspace:^
+        version: link:packages/harness-pi
+      '@earendil-works/pi-coding-agent':
+        specifier: ^0.80.3
+        version: 0.80.3(ws@8.21.0)(zod@4.4.3)
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.43
+      typebox:
+        specifier: 1.1.38
+        version: 1.1.38
       typescript:
         specifier: ^5.5.0
         version: 5.9.3

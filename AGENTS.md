@@ -46,8 +46,9 @@ pnpm install
 # Build all packages
 pnpm -r build
 
-# Typecheck all packages
+# Typecheck all packages and the pi extension
 pnpm -r typecheck
+pnpm typecheck:pi
 
 # Run tests
 pnpm -r test
@@ -55,6 +56,16 @@ pnpm -r test
 # Run an example
 pnpm -F @agent-loop-examples/jira-to-mr start
 ```
+
+## Pi extension (dogfooding)
+
+A project-local pi extension lives in `.pi/extensions/agent-loop.ts` and a matching skill in `.pi/skills/agent-loop/SKILL.md`. This lets you trigger agent-loop workflows from inside a pi session:
+
+```text
+/agentloop run jira-to-mr AC-123 feature/ac_123
+```
+
+When modifying the extension, run `pnpm typecheck:pi` to validate it.
 
 ## Adding features
 

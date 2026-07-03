@@ -12,10 +12,15 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:pi": "tsc -p .pi/tsconfig.json"
   },
   "devDependencies": {
+    "@agent-loop/core": "workspace:^",
+    "@agent-loop/harness-pi": "workspace:^",
+    "@earendil-works/pi-coding-agent": "^0.80.3",
     "@types/node": "^20.0.0",
+    "typebox": "1.1.38",
     "typescript": "^5.5.0"
   }
 }
