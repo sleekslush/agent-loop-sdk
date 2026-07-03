@@ -27,9 +27,14 @@ agent-loop-sdk/
 │   │   ├── src/constraints.ts
 │   │   ├── src/state.ts
 │   │   └── src/checkpoint.ts
-│   └── harness-pi/        # pi SDK adapter
-│       ├── src/pi-harness.ts
-│       └── src/pi-session.ts
+│   ├── harness-pi/        # pi SDK adapter
+│   │   ├── src/pi-harness.ts
+│   │   └── src/pi-session.ts
+│   └── pi-extension/      # pi extension, skill, and setup command
+│       ├── src/extension.ts
+│       ├── src/skill/SKILL.md
+│       ├── src/prompts/design-workflow.md
+│       └── scripts/setup.js
 ├── examples/
 │   ├── minimal/           # basic usage
 │   └── jira-to-mr/        # realistic consumer example
@@ -59,11 +64,19 @@ pnpm -F @agent-loop-examples/jira-to-mr start
 
 ## Pi extension (dogfooding)
 
-A project-local pi extension lives in `.pi/extensions/agent-loop.ts` and a matching skill in `.pi/skills/agent-loop/SKILL.md`. This lets you trigger agent-loop workflows from inside a pi session:
+The pi extension lives in `packages/pi-extension/`. Install it into your local `.pi/` folder with:
+
+```bash
+pnpm exec agent-loop-pi-extension setup
+```
+
+This copies the extension, skill, and prompt files into `.pi/`. The `.pi/` folder is user-specific and is ignored by git.
+
+Once installed, you can trigger agent-loop workflows from inside a pi session:
 
 ```text
-/agentloop run jira-to-mr AC-123 feature/ac_123
-/agentloop design review this MR with security and architecture reviewers
+/agentloop review this MR with security and architecture reviewers
+/agentloop design implement AC-123
 ```
 
 The extension can also design workflows on-demand by compiling an AI-friendly JSON workflow into a real `Workflow` object via `compileAiWorkflow` from `@agent-loop/core`.

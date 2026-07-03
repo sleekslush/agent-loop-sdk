@@ -18,13 +18,25 @@ Both paths converge on the same execution pipeline.
 
 A skill alone is not enough because it cannot actively execute code; the extension provides the runtime.
 
-### Distribution options
+### Distribution
 
-1. **Local extension** during development: `pi -e ./path/to/extension.ts`.
-2. **Project-local extension**: place in `.pi/extensions/agent-loop.ts` and `.pi/skills/agent-loop/SKILL.md` so it auto-loads for this repo.
-3. **Pi package** for reuse: publish `npm:@agent-loop/pi-agent-loop` and install with `pi install`.
+Install the `@agent-loop/pi-extension` package and run its setup command:
 
-**Recommendation:** start with option 2 for dogfooding, then publish as option 3.
+```bash
+pnpm add -D @agent-loop/pi-extension
+pnpm exec agent-loop-pi-extension setup
+```
+
+This copies the extension, skill, and prompt into a local `.pi/` folder. `.pi/` is
+user-specific and should not be committed to git.
+
+For development inside this repo:
+
+```bash
+pnpm exec agent-loop-pi-extension setup
+```
+
+The extension is also available as a package under `packages/pi-extension/`.
 
 ## Unified entry point: `run_agent_loop`
 
@@ -89,13 +101,16 @@ Is it "/agentloop ..."?
 
 ```
 /agentloop implement AC-123: add email verification
-/agentloop run jira-to-mr AC-123 feature/ac_123_email_verification
 /agentloop design review this MR with a security and architecture reviewer
 ```
 
+`/agentloop run <workflow_id>` is also supported if you register predefined
+workflows through the extension's `predefinedWorkflows` option (see
+`packages/pi-extension/README.md`).
+
 The extension parses the subcommand:
 
-- `run <workflow_id> [args...]` → `mode: "predefined"`
+- `run <workflow_id> [args...]` → `mode: "predefined"` (requires configuration)
 - `design <goal>` → `mode: "auto"`, but stop after showing the planned workflow and ask for approval
 - default `<goal>` → `mode: "auto"`
 
@@ -292,39 +307,44 @@ Some workflows may need approval gates (e.g., before creating an MR or spending 
 - The extension should not silently run destructive workflows. Require explicit user approval for the first run of any on-demand workflow.
 - Workflows execute with the same file system access as pi itself; this is acceptable because the user already trusts pi.
 
-## Suggested pi package structure
+## Pi package structure
+
+The extension is packaged as `@agent-loop/pi-extension`:
 
 ```
-pi-agent-loop/
-├── extension.ts           # main extension entry point
-├── skill/
-│   └── SKILL.md           # when pi should call run_agent_loop
-├── prompts/
-│   └── design-workflow.md # planner prompt template
+packages/pi-extension/
+├── src/
+│   ├── extension.ts           # main extension entry point
+│   ├── skill/
+│   │   └── SKILL.md           # when pi should call run_agent_loop
+│   └── prompts/
+│       └── design-workflow.md # planner prompt template
+├── scripts/
+│   └── setup.js               # copies files into .pi/
 └── package.json
 ```
 
-`package.json` pi manifest:
+`package.json` exposes a bin command:
 
 ```json
 {
-  "name": "@agent-loop/pi-agent-loop",
-  "keywords": ["pi-package"],
-  "pi": {
-    "extensions": ["./extension.ts"],
-    "skills": ["./skill"],
-    "prompts": ["./prompts"]
+  "bin": {
+    "agent-loop-pi-extension": "./scripts/setup.js"
   }
 }
 ```
 
+The setup command copies `src/extension.ts` to `.pi/extensions/agent-loop.ts`,
+`src/skill/SKILL.md` to `.pi/skills/agent-loop/SKILL.md`, and
+`src/prompts/design-workflow.md` to `.pi/prompts/design-workflow.md`.
+
 ## Migration path
 
-1. Add a local extension at `.pi/extensions/agent-loop.ts` and skill at `.pi/skills/agent-loop/SKILL.md`.
-2. Implement `run_agent_loop` tool and `/agentloop` command.
-3. Dogfood with the existing `examples/jira-to-mr` workflow using `/agentloop run jira-to-mr ...`.
+1. Implement `run_agent_loop` tool and `/agentloop` command in `packages/pi-extension/src/extension.ts`.
+2. Install the extension locally with `pnpm exec agent-loop-pi-extension setup`.
+3. Dogfood with the existing `examples/jira-to-mr` workflow by registering it through the extension's `predefinedWorkflows` option.
 4. Add `mode: "auto"` workflow design for natural-language prompts.
-5. Extract into `packages/pi-agent-loop/` and publish as a pi package.
+5. Publish `@agent-loop/pi-extension` to npm.
 
 ## Open questions
 

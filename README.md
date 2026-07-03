@@ -16,6 +16,7 @@ A TypeScript SDK for running goal‑driven agent workflows on top of existing ag
 |---|---|
 | [`@agent-loop/core`](packages/core) | Workflow engine, state machine, constraints, checkpoints, events |
 | [`@agent-loop/harness-pi`](packages/harness-pi) | Adapter for `@earendil-works/pi-coding-agent` |
+| [`@agent-loop/pi-extension`](packages/pi-extension) | Pi extension, skill, and prompt for `/agentloop` and `run_agent_loop` |
 
 ## Quick start
 
@@ -24,6 +25,15 @@ pnpm install
 pnpm -r build
 pnpm -r test
 ```
+
+To use the SDK inside pi, install the pi extension:
+
+```bash
+pnpm add -D @agent-loop/pi-extension
+pnpm exec agent-loop-pi-extension setup
+```
+
+This creates a local `.pi/` folder with the extension, skill, and prompt. `.pi/` is user-specific and should not be committed.
 
 ## Usage
 
@@ -40,7 +50,9 @@ const workflow = defineWorkflow({
       role: "reviewer",
       harness: "pi",
       model: "claude-sonnet-4-20250514",
-      parseOutput: (output) => ({ approved: /APPROVED/i.test(output) }),
+      summarizeOutput: true,
+      summaryPrompt:
+        "Summarize your review in one paragraph and end with VERDICT: APPROVED or VERDICT: REJECTED.",
     },
   ],
   transitions: [
@@ -48,7 +60,7 @@ const workflow = defineWorkflow({
   ],
   constraints: { maxIterations: 10, maxSpendUsd: 2.0 },
   exitConditions: {
-    goalMet: (state) => state.context.approved === true,
+    goalMet: (state) => /VERDICT: APPROVED/i.test(state.sessions.reviewer.lastSummary ?? ""),
   },
 });
 
@@ -60,21 +72,32 @@ const state = await orchestrator.start(workflow);
 console.log(state.outcome);
 ```
 
-A session can also ask the harness to summarize its own output after a turn:
+Setting `summarizeOutput: true` asks the session to summarize its own output
+after the turn. The summary is stored on `state.sessions.<id>.lastSummary` and
+emitted as a `turn.summarized` event, making it easy to pass compact context to
+the next phase. See [docs/observability.md](docs/observability.md) for more
+details.
 
-```ts
-{
-  id: "reviewer",
-  role: "reviewer",
-  harness: "pi",
-  summarizeOutput: true,
-  summaryPrompt: "Summarize your review in one paragraph and end with VERDICT: APPROVED or VERDICT: REJECTED.",
-}
+## Pi extension
+
+The [`@agent-loop/pi-extension`](packages/pi-extension) package adds:
+
+- `/agentloop <goal>` — design and run a workflow from a goal.
+- `/agentloop design <goal>` — design a workflow and run it.
+- `run_agent_loop` tool — lets pi decide to run a workflow itself.
+
+Install it once per project:
+
+```bash
+pnpm add -D @agent-loop/pi-extension
+pnpm exec agent-loop-pi-extension setup
 ```
 
-The summary is stored on `state.sessions.reviewer.lastSummary` and emitted as a
-`turn.summarized` event. See [docs/observability.md](docs/observability.md) for
-more details.
+Then start pi in the same directory. The generated `.pi/` folder is user-specific
+and is already ignored by the repo's `.gitignore`.
+
+To add predefined workflows for `/agentloop run <workflow-id>`, see
+[`packages/pi-extension/README.md`](packages/pi-extension/README.md).
 
 ## Examples
 

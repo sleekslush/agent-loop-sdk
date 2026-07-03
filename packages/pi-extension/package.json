@@ -1,0 +1,32 @@
+{
+  "name": "@agent-loop/pi-extension",
+  "version": "0.0.0",
+  "description": "Pi coding agent extension for agent-loop-sdk",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-loop-pi-extension": "./scripts/setup.js"
+  },
+  "files": [
+    "dist",
+    "scripts",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "setup": "node scripts/setup.js",
+    "lint": "echo 'lint not configured'"
+  },
+  "dependencies": {
+    "@agent-loop/core": "workspace:*",
+    "@agent-loop/harness-pi": "workspace:*",
+    "@earendil-works/pi-coding-agent": "^0.80.3",
+    "typebox": "1.1.38"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}
