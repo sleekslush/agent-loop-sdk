@@ -63,7 +63,10 @@ A project-local pi extension lives in `.pi/extensions/agent-loop.ts` and a match
 
 ```text
 /agentloop run jira-to-mr AC-123 feature/ac_123
+/agentloop design review this MR with security and architecture reviewers
 ```
+
+The extension can also design workflows on-demand by compiling an AI-friendly JSON workflow into a real `Workflow` object via `compileAiWorkflow` from `@agent-loop/core`.
 
 When modifying the extension, run `pnpm typecheck:pi` to validate it.
 
