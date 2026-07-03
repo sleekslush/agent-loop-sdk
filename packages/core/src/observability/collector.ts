@@ -3,11 +3,9 @@ import type { AgentHarness, OrchestratorEvent } from "../types.js";
 import type {
   ObservationEvent,
   ObservationStore,
-  RoleRollup,
   Run,
   SessionRecord,
   SessionSnapshot,
-  WorkflowRollup,
 } from "./types.js";
 
 function periodFromDate(date: Date): string {
