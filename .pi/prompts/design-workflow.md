@@ -44,6 +44,7 @@ Given a user goal, output a single valid JSON object matching the schema below. 
 - `input` templates use `{{path}}` syntax. Paths are resolved against `state` (e.g. `{{sessions.reader.lastOutput}}`, `{{context.approved}}`, `{{trigger.payload.ticketKey}}`).
 - `when` and `exitConditions` are JavaScript expressions evaluated against `state`. They must return a boolean.
 - `parseOutput` maps context keys to extraction rules. `type` is one of `boolean`, `string`, `number`. `pattern` is a regex string. Use `group` to pick a capture group (default 0).
+- `harness` defaults to the host harness (e.g. `"pi"` when compiled inside pi). Omit it unless you need a specific harness.
 - Keep `maxIterations` under 30 and `maxSpendUsd` reasonable for the task.
 
 ## Example

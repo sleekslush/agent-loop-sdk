@@ -172,7 +172,7 @@ async function designWorkflow(
       throw new Error(`AI workflow validation failed: ${errors.join("; ")}`);
     }
     notify(`[agent-loop] designed workflow "${aiWorkflow.id}" with ${aiWorkflow.sessions.length} sessions`, "info");
-    return compileAiWorkflow(aiWorkflow);
+    return compileAiWorkflow(aiWorkflow, { defaultHarness: "pi" });
   } catch (err) {
     notify(`[agent-loop] design failed: ${String(err)}`, "error");
     throw err;

@@ -53,10 +53,10 @@ export interface AiWorkflow {
 
 export interface CompileOptions {
   /**
-   * Optional fallback harness for sessions that omit it.
-   * @default "pi"
+   * Fallback harness for sessions that omit it. Must match the name of a
+   * harness registered with the Orchestrator (e.g. "pi", "opencode").
    */
-  defaultHarness?: string;
+  defaultHarness: string;
 }
 
 /**
@@ -104,13 +104,13 @@ export function validateAiWorkflow(aiWorkflow: AiWorkflow): string[] {
 /**
  * Compile an AI workflow definition into an executable Workflow.
  */
-export function compileAiWorkflow(aiWorkflow: AiWorkflow, options: CompileOptions = {}): Workflow {
+export function compileAiWorkflow(aiWorkflow: AiWorkflow, options: CompileOptions): Workflow {
   const errors = validateAiWorkflow(aiWorkflow);
   if (errors.length > 0) {
     throw new Error(`Invalid AI workflow: ${errors.join("; ")}`);
   }
 
-  const defaultHarness = options.defaultHarness ?? "pi";
+  const { defaultHarness } = options;
 
   return {
     id: aiWorkflow.id,

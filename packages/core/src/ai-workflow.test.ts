@@ -77,33 +77,36 @@ describe("validateAiWorkflow", () => {
 
 describe("compileAiWorkflow", () => {
   it("compiles templates and expressions", () => {
-    const workflow = compileAiWorkflow({
-      id: "wf",
-      goal: "test",
-      sessions: [
-        {
-          id: "reader",
-          role: "reader",
-          parseOutput: {
-            approved: { type: "boolean", pattern: "APPROVED" },
-            count: { type: "number", pattern: "COUNT:\\s*(\\d+)", group: 1 },
+    const workflow = compileAiWorkflow(
+      {
+        id: "wf",
+        goal: "test",
+        sessions: [
+          {
+            id: "reader",
+            role: "reader",
+            parseOutput: {
+              approved: { type: "boolean", pattern: "APPROVED" },
+              count: { type: "number", pattern: "COUNT:\\s*(\\d+)", group: 1 },
+            },
           },
+        ],
+        transitions: [
+          { from: "start", to: "reader", input: "Read {{sessions.reader.lastOutput}}" },
+          {
+            from: "reader",
+            to: "reader",
+            when: "state.context.approved === true",
+            input: "Done",
+          },
+        ],
+        constraints: { maxIterations: 10 },
+        exitConditions: {
+          goalMet: "state.context.approved === true",
         },
-      ],
-      transitions: [
-        { from: "start", to: "reader", input: "Read {{sessions.reader.lastOutput}}" },
-        {
-          from: "reader",
-          to: "reader",
-          when: "state.context.approved === true",
-          input: "Done",
-        },
-      ],
-      constraints: { maxIterations: 10 },
-      exitConditions: {
-        goalMet: "state.context.approved === true",
       },
-    });
+      { defaultHarness: "mock" },
+    );
 
     const state = makeState();
     const input = workflow.transitions[0].input as (state: WorkflowState) => string;
@@ -122,15 +125,18 @@ describe("compileAiWorkflow", () => {
     assert.equal(goalMet(makeState({ context: { approved: true } })), true);
   });
 
-  it("defaults harness to pi", () => {
-    const workflow = compileAiWorkflow({
-      id: "wf",
-      goal: "test",
-      sessions: [{ id: "a", role: "role" }],
-      transitions: [{ from: "start", to: "a" }],
-      constraints: { maxIterations: 10 },
-      exitConditions: {},
-    });
+  it("defaults harness to the provided defaultHarness", () => {
+    const workflow = compileAiWorkflow(
+      {
+        id: "wf",
+        goal: "test",
+        sessions: [{ id: "a", role: "role" }],
+        transitions: [{ from: "start", to: "a" }],
+        constraints: { maxIterations: 10 },
+        exitConditions: {},
+      },
+      { defaultHarness: "pi" },
+    );
     assert.equal(workflow.sessions[0].harness, "pi");
   });
 
@@ -151,14 +157,17 @@ describe("compileAiWorkflow", () => {
 
   it("throws on invalid workflow", () => {
     assert.throws(() => {
-      compileAiWorkflow({
-        id: "",
-        goal: "test",
-        sessions: [],
-        transitions: [],
-        constraints: { maxIterations: 10 },
-        exitConditions: {},
-      });
+      compileAiWorkflow(
+        {
+          id: "",
+          goal: "test",
+          sessions: [],
+          transitions: [],
+          constraints: { maxIterations: 10 },
+          exitConditions: {},
+        },
+        { defaultHarness: "mock" },
+      );
     });
   });
 });
