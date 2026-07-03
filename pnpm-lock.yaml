@@ -73,6 +73,22 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/integration-tests:
+    dependencies:
+      '@agent-loop/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agent-loop/harness-pi':
+        specifier: workspace:*
+        version: link:../harness-pi
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/pi-extension:
     dependencies:
       '@agent-loop/core':

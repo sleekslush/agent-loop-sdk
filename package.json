@@ -11,6 +11,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
+    "test:integration": "AGENT_LOOP_RUN_INTEGRATION_TESTS=true pnpm -F @agent-loop/integration-tests test:integration",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "typecheck:pi": "pnpm -F @agent-loop/pi-extension typecheck"

@@ -162,6 +162,9 @@ pnpm -r typecheck
 
 # Run tests
 pnpm -r test
+
+# Run integration tests against a real harness (requires pi auth)
+AGENT_LOOP_RUN_INTEGRATION_TESTS=true pnpm -F @agent-loop/integration-tests test:integration
 ```
 
 ## Roadmap

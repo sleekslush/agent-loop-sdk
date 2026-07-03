@@ -1,0 +1,22 @@
+{
+  "name": "@agent-loop/integration-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Integration tests for agent-loop-sdk using real harnesses",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'dist/**/*.test.js'",
+    "test:integration": "AGENT_LOOP_RUN_INTEGRATION_TESTS=true node --test 'dist/**/*.integration.test.js'",
+    "lint": "echo 'lint not configured'"
+  },
+  "dependencies": {
+    "@agent-loop/core": "workspace:*",
+    "@agent-loop/harness-pi": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}

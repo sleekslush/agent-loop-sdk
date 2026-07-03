@@ -30,11 +30,15 @@ agent-loop-sdk/
 │   ├── harness-pi/        # pi SDK adapter
 │   │   ├── src/pi-harness.ts
 │   │   └── src/pi-session.ts
-│   └── pi-extension/      # pi extension, skill, and setup command
-│       ├── src/extension.ts
-│       ├── src/skill/SKILL.md
-│       ├── src/prompts/design-workflow.md
-│       └── scripts/setup.js
+│   ├── pi-extension/      # pi extension, skill, and setup command
+│   │   ├── src/extension.ts
+│   │   ├── src/skill/SKILL.md
+│   │   ├── src/prompts/design-workflow.md
+│   │   └── scripts/setup.js
+│   └── integration-tests/ # real-harness integration tests
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── src/engine.integration.test.ts
 ├── examples/
 │   ├── minimal/           # basic usage
 │   └── jira-to-mr/        # realistic consumer example
@@ -57,6 +61,9 @@ pnpm typecheck:pi
 
 # Run tests
 pnpm -r test
+
+# Run integration tests against a real harness (requires pi auth)
+AGENT_LOOP_RUN_INTEGRATION_TESTS=true pnpm -F @agent-loop/integration-tests test:integration
 
 # Run an example
 pnpm -F @agent-loop-examples/jira-to-mr start
@@ -123,6 +130,8 @@ When modifying the extension, run `pnpm typecheck:pi` to validate it.
 - Use Node's built‑in test runner (`node:test` / `node:assert/strict`).
 - Tests live next to the source files: `src/foo.ts` → `src/foo.test.ts`.
 - Mock harnesses are preferred over calling real harnesses in unit tests.
+- Integration tests that use a real harness live in `packages/integration-tests/`
+  and are skipped unless `AGENT_LOOP_RUN_INTEGRATION_TESTS=true` is set.
 - Clean up temporary files (use `tmpdir()` and `rm()`).
 
 ## Things to avoid
