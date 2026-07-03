@@ -26,14 +26,19 @@ pnpm -r build
 pnpm -r test
 ```
 
-To use the SDK inside pi, install the pi extension:
+To use the SDK inside pi, install the pi package:
 
 ```bash
-pnpm add -D @agent-loop/pi-extension
-pnpm exec agent-loop-pi-extension setup
+pi install npm:@agent-loop/pi-extension
 ```
 
-This creates a local `.pi/` folder with the extension, skill, and prompt. `.pi/` is user-specific and should not be committed.
+Or, while developing locally from this repo:
+
+```bash
+pi install ./packages/pi-extension
+```
+
+Then start pi in your project directory. `/agentloop` and the `run_agent_loop` tool will be available immediately.
 
 ## Usage
 
@@ -86,15 +91,30 @@ The [`@agent-loop/pi-extension`](packages/pi-extension) package adds:
 - `/agentloop design <goal>` — design a workflow and run it.
 - `run_agent_loop` tool — lets pi decide to run a workflow itself.
 
-Install it once per project:
+Install it as a pi package:
+
+```bash
+pi install npm:@agent-loop/pi-extension
+```
+
+For local development from this repo:
+
+```bash
+pi install ./packages/pi-extension
+```
+
+Then start pi in the same directory.
+
+If you prefer project-local `.pi/` files (for example, to customize the
+extension), you can also install it via npm/pnpm and run the setup command:
 
 ```bash
 pnpm add -D @agent-loop/pi-extension
 pnpm exec agent-loop-pi-extension setup
 ```
 
-Then start pi in the same directory. The generated `.pi/` folder is user-specific
-and is already ignored by the repo's `.gitignore`.
+The generated `.pi/` folder is user-specific and is already ignored by the
+repo's `.gitignore`.
 
 To add predefined workflows for `/agentloop run <workflow-id>`, see
 [`packages/pi-extension/README.md`](packages/pi-extension/README.md).

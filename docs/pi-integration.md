@@ -20,23 +20,36 @@ A skill alone is not enough because it cannot actively execute code; the extensi
 
 ### Distribution
 
-Install the `@agent-loop/pi-extension` package and run its setup command:
+The extension is published as a pi package, `@agent-loop/pi-extension`. Install
+it directly with pi:
+
+```bash
+pi install npm:@agent-loop/pi-extension
+```
+
+For local development from this repo:
+
+```bash
+pi install ./packages/pi-extension
+```
+
+Or from another project on the same machine:
+
+```bash
+pi install /path/to/agent-loop-sdk/packages/pi-extension
+```
+
+If you prefer project-local `.pi/` files (for example, to customize the
+extension), install the package with your Node package manager and run the setup
+command:
 
 ```bash
 pnpm add -D @agent-loop/pi-extension
 pnpm exec agent-loop-pi-extension setup
 ```
 
-This copies the extension, skill, and prompt into a local `.pi/` folder. `.pi/` is
-user-specific and should not be committed to git.
-
-For development inside this repo:
-
-```bash
-pnpm exec agent-loop-pi-extension setup
-```
-
-The extension is also available as a package under `packages/pi-extension/`.
+This copies the extension, skill, and prompt into a local `.pi/` folder. `.pi/`
+is user-specific and should not be committed to git.
 
 ## Unified entry point: `run_agent_loop`
 
@@ -321,15 +334,23 @@ packages/pi-extension/
 │       └── design-workflow.md # planner prompt template
 ├── scripts/
 │   └── setup.js               # copies files into .pi/
-└── package.json
+├── package.json
+└── tsconfig.json
 ```
 
-`package.json` exposes a bin command:
+`package.json` declares the pi package manifest and a bin command:
 
 ```json
 {
+  "name": "@agent-loop/pi-extension",
+  "keywords": ["pi-package"],
   "bin": {
     "agent-loop-pi-extension": "./scripts/setup.js"
+  },
+  "pi": {
+    "extensions": ["./src/extension.ts"],
+    "skills": ["./src/skill"],
+    "prompts": ["./src/prompts"]
   }
 }
 ```
@@ -341,10 +362,13 @@ The setup command copies `src/extension.ts` to `.pi/extensions/agent-loop.ts`,
 ## Migration path
 
 1. Implement `run_agent_loop` tool and `/agentloop` command in `packages/pi-extension/src/extension.ts`.
-2. Install the extension locally with `pnpm exec agent-loop-pi-extension setup`.
+2. Install the extension with pi for dogfooding:
+   ```bash
+   pi install ./packages/pi-extension
+   ```
 3. Dogfood with the existing `examples/jira-to-mr` workflow by registering it through the extension's `predefinedWorkflows` option.
 4. Add `mode: "auto"` workflow design for natural-language prompts.
-5. Publish `@agent-loop/pi-extension` to npm.
+5. Publish `@agent-loop/pi-extension` to npm so users can `pi install npm:@agent-loop/pi-extension`.
 
 ## Open questions
 

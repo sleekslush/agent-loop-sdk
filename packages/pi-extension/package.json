@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "keywords": ["pi-package"],
   "bin": {
     "agent-loop-pi-extension": "./scripts/setup.js"
   },
@@ -13,6 +14,11 @@
     "scripts",
     "src"
   ],
+  "pi": {
+    "extensions": ["./src/extension.ts"],
+    "skills": ["./src/skill"],
+    "prompts": ["./src/prompts"]
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -21,12 +27,16 @@
   },
   "dependencies": {
     "@agent-loop/core": "workspace:*",
-    "@agent-loop/harness-pi": "workspace:*",
-    "@earendil-works/pi-coding-agent": "^0.80.3",
-    "typebox": "1.1.38"
+    "@agent-loop/harness-pi": "workspace:*"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
   },
   "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.80.3",
     "@types/node": "^20.0.0",
+    "typebox": "1.1.38",
     "typescript": "^5.5.0"
   }
 }

@@ -64,13 +64,18 @@ pnpm -F @agent-loop-examples/jira-to-mr start
 
 ## Pi extension (dogfooding)
 
-The pi extension lives in `packages/pi-extension/`. Install it into your local `.pi/` folder with:
+The pi extension lives in `packages/pi-extension/` and is packaged as a
+[pi package](https://pi.dev/docs/packages.html). Install it directly with pi:
 
 ```bash
-pnpm exec agent-loop-pi-extension setup
+pi install ./packages/pi-extension
 ```
 
-This copies the extension, skill, and prompt files into `.pi/`. The `.pi/` folder is user-specific and is ignored by git.
+Or from another project on the same machine:
+
+```bash
+pi install /path/to/agent-loop-sdk/packages/pi-extension
+```
 
 Once installed, you can trigger agent-loop workflows from inside a pi session:
 
@@ -79,7 +84,18 @@ Once installed, you can trigger agent-loop workflows from inside a pi session:
 /agentloop design implement AC-123
 ```
 
-The extension can also design workflows on-demand by compiling an AI-friendly JSON workflow into a real `Workflow` object via `compileAiWorkflow` from `@agent-loop/core`.
+If you prefer project-local `.pi/` files (e.g., to customize the extension), use
+the setup command:
+
+```bash
+pnpm exec agent-loop-pi-extension setup
+```
+
+The `.pi/` folder is user-specific and is ignored by git.
+
+The extension can also design workflows on-demand by compiling an AI-friendly
+JSON workflow into a real `Workflow` object via `compileAiWorkflow` from
+`@agent-loop/core`.
 
 When modifying the extension, run `pnpm typecheck:pi` to validate it.
 
