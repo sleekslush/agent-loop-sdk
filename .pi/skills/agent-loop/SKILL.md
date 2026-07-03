@@ -1,3 +1,7 @@
+---
+description: Use the run_agent_loop tool for multi-step, multi-role agent workflows.
+---
+
 # Agent Loop
 
 Use the `run_agent_loop` tool when the user asks for something that is naturally multi-step and benefits from isolated roles or sequential handoffs.
