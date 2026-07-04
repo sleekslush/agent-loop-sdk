@@ -64,6 +64,7 @@ export interface AgentHarness {
 export interface SessionConfig {
   model?: ModelRef;
   systemPrompt?: string;
+  thinkingLevel?: string;
   harnessOptions?: Record<string, unknown>;
 }
 

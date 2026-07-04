@@ -87,6 +87,7 @@ export class PiHarness implements AgentHarness {
       cwd: this.cwd,
       agentDir: this.agentDir,
       model,
+      thinkingLevel: config.thinkingLevel as never,
       authStorage: this.authStorage,
       modelRegistry: this.modelRegistry,
       settingsManager: this.settingsManager,
